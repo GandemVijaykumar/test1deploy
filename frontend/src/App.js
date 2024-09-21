@@ -15,7 +15,7 @@ const App = () => {
     try {
       const jsonInput = JSON.parse(inputData);  // Check if the input is valid JSON
       try {
-        const res = await axios.post('https://test1deploy-backend.onrender.com', jsonInput);
+        const res = await axios.post('https://test1deploy-backend.onrender.com/bfhl', jsonInput);
         setResponseData(res.data);
         setError('');  // Clear any previous errors
       } catch (apiError) {
