@@ -1,107 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const App = () => {
-  const [inputData, setInputData] = useState('');
-  const [responseData, setResponseData] = useState(null);
+export default function Home() {
+  const [jsonInput, setJsonInput] = useState('');
   const [selectedOptions, setSelectedOptions] = useState([]);
+  const [responseData, setResponseData] = useState(null);
   const [error, setError] = useState('');
 
-  const handleInputChange = (e) => {
-    setInputData(e.target.value);
+  // Dropdown options
+  const options = [
+    { label: 'Alphabets', value: 'alphabets' },
+    { label: 'Numbers', value: 'numbers' },
+    { label: 'Highest Lowercase Alphabet', value: 'highest_lowercase_alphabet' }
+  ];
+
+  // Set the page title to the user's roll number
+  useEffect(() => {
+    document.title = 'AP21110011507';
+  }, []);
+
+  // Handle JSON input change
+  const handleJsonInputChange = (e) => {
+    setJsonInput(e.target.value);
   };
 
+  // Handle submit button click
   const handleSubmit = async () => {
     try {
-      const jsonInput = JSON.parse(inputData);  // Check if the input is valid JSON
-      try {
-        const res = await axios.post('http://localhost:8000/bfhl', jsonInput);
-        setResponseData(res.data);
-        setError('');  // Clear any previous errors
-      } catch (apiError) {
-        setError('Error in API call');
-      }
-    } catch (jsonError) {
-      setError('Invalid JSON format');
+      setError('');
+      const parsedData = JSON.parse(jsonInput); // Validate JSON input
+      const res = await axios.post('https://bajajbackend-flax.vercel.app/bfhl', parsedData);
+      setResponseData(res.data);
+    } catch (error) {
+      setError('Invalid JSON input or API call failed');
     }
   };
 
-  const handleOptionChange = (e) => {
-    const { value, checked } = e.target;
-    setSelectedOptions((prev) =>
-      checked ? [...prev, value] : prev.filter((option) => option !== value)
-    );
+  // Handle multi-select dropdown change
+  const handleDropdownChange = (e) => {
+    const { options } = e.target;
+    const selected = Array.from(options)
+      .filter((option) => option.selected)
+      .map((option) => option.value);
+    setSelectedOptions(selected);
   };
 
-  const renderResponse = () => {
+  // Render the filtered response data based on dropdown selection
+  const renderFilteredResponse = () => {
     if (!responseData) return null;
-
-    const filteredData = {};
-    if (selectedOptions.includes('Alphabets')) filteredData.alphabets = responseData.alphabets;
-    if (selectedOptions.includes('Numbers')) filteredData.numbers = responseData.numbers;
-    if (selectedOptions.includes('Highest Alphabet')) filteredData.highest_alphabet = responseData.highest_alphabet;
-
-    return (
-      <div>
-        <h3>Filtered Response:</h3>
-        <pre>{JSON.stringify(filteredData, null, 2)}</pre>
-      </div>
-    );
+    const filteredResponse = {};
+    selectedOptions.forEach((option) => {
+      filteredResponse[option] = responseData[option];
+    });
+    return JSON.stringify(filteredResponse, null, 2);
   };
 
   return (
-    <div className="App">
-      <h1>Backend API Interaction</h1>
+    <div style={{ padding: '20px' }}>
+      <h1>REST API Client</h1>
       <textarea
-        rows="10"
-        cols="50"
-        value={inputData}
-        onChange={handleInputChange}
-        placeholder="Enter valid JSON input"
+        placeholder='Enter JSON input here'
+        value={jsonInput}
+        onChange={handleJsonInputChange}
+        rows={8}
+        cols={50}
+        style={{ marginBottom: '20px', width: '100%' }}
       />
       <br />
-      <button onClick={handleSubmit}>Submit</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-
+      <button onClick={handleSubmit} style={{ padding: '10px 20px' }}>
+        Submit
+      </button>
+      {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
+      <br />
       {responseData && (
-        <div>
-          <h3>Response:</h3>
-          <pre>{JSON.stringify(responseData, null, 2)}</pre>
-
-          <h3>Select Data to Show:</h3>
-          <label>
-            <input
-              type="checkbox"
-              value="Alphabets"
-              onChange={handleOptionChange}
-            />{' '}
-            Alphabets
-          </label>
+        <>
+          <label htmlFor='dropdown'>Select options to display:</label>
           <br />
-          <label>
-            <input
-              type="checkbox"
-              value="Numbers"
-              onChange={handleOptionChange}
-            />{' '}
-            Numbers
-          </label>
+          <select
+            id='dropdown'
+            multiple={true}
+            value={selectedOptions}
+            onChange={handleDropdownChange}
+            style={{ marginTop: '10px', padding: '10px', width: '100%' }}
+          >
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <br />
-          <label>
-            <input
-              type="checkbox"
-              value="Highest Alphabet"
-              onChange={handleOptionChange}
-            />{' '}
-            Highest Alphabet
-          </label>
-          <br />
-
-          {renderResponse()}
-        </div>
+          <h3>Filtered Response:</h3>
+          <pre style={{ backgroundColor: '#f0f0f0', padding: '10px' }}>{renderFilteredResponse()}</pre>
+        </>
       )}
     </div>
   );
-};
-
-export default App;
+}
